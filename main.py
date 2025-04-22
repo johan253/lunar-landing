@@ -3,14 +3,15 @@ import numpy as np
 from agents.dqn_agent import DQNAgent
 from utils.train_logger import TrainLogger
 from typing import SupportsFloat, Tuple, Any
+from tqdm import tqdm
 
 
 def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 1000,
           eps_start: float = 1.0, eps_end: float = 0.01, eps_decay: float = 0.995):
-    logger = TrainLogger()
+    logger = TrainLogger(printer=tqdm.write)
     eps = eps_start
 
-    for i_episode in range(1, n_episodes + 1):
+    for i_episode in tqdm(range(1, n_episodes + 1)):
         state: np.ndarray = env.reset()[0]
         score = 0.0
 
