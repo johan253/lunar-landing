@@ -19,7 +19,7 @@ class DQNAgent:
         self.optimizer = torch.optim.Adam(self.qnetwork_local.parameters(), lr=lr)
 
         # Replay buffer
-        self.memory = ReplayBuffer(buffer_size, batch_size, seed)
+        self.memory = ReplayBuffer(buffer_size, batch_size)
         self.batch_size = batch_size
         self.gamma = gamma
         self.tau = tau
