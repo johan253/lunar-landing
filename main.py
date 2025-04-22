@@ -7,11 +7,16 @@ from tqdm import tqdm
 
 
 def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 1000,
-          eps_start: float = 1.0, eps_end: float = 0.01, eps_decay: float = 0.995):
+          eps_start: float = 1.0, eps_end: float = 0.01, eps_decay: float = 0.995,
+          render_last: bool = False) -> list[float]:
     logger = TrainLogger(printer=tqdm.write)
     eps = eps_start
 
     for i_episode in tqdm(range(1, n_episodes + 1)):
+        if render_last and i_episode == n_episodes:
+            env.close()
+            env = gym.make("LunarLander-v3", render_mode="human")
+        
         state: np.ndarray = env.reset()[0]
         score = 0.0
 
@@ -43,6 +48,6 @@ if __name__ == "__main__":
     action_size = env.action_space.n # type: ignore
 
     agent = DQNAgent(state_size, action_size)
-    scores = train(env, agent)
+    scores = train(env, agent, render_last=True)
 
     env.close()
