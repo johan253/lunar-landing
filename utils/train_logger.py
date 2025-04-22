@@ -15,7 +15,7 @@ class TrainLogger:
         """Log score and success for an episode."""
         self.scores.append(score)
         self.successes.append(1 if success else 0)
-        self.print(f"Episode {episode} | Score: {score:.2f} | Success: {success}")
+        self.print(f"Episode {episode:10} | Score: {score:10.2f} | Success: {success}")
 
     def save_plots(self) -> None:
         """Create and save reward + success plots."""
