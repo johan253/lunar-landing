@@ -39,8 +39,8 @@ def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 10
 
 if __name__ == "__main__":
     env = gym.make("LunarLander-v3")
-    state_size = env.observation_space.shape[0]
-    action_size = env.action_space.n
+    state_size = env.observation_space.shape[0] # type: ignore
+    action_size = env.action_space.n # type: ignore
 
     agent = DQNAgent(state_size, action_size)
     scores = train(env, agent)
