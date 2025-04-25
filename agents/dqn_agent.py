@@ -1,3 +1,4 @@
+from typing import Tuple
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -5,9 +6,9 @@ from networks.q_network import QNetwork
 from utils.replay_buffer import ReplayBuffer
 
 class DQNAgent:
-    def __init__(self, state_size, action_size, seed=0,
-                 buffer_size=int(1e5), batch_size=64, gamma=0.99,
-                 lr=1e-3, tau=1e-3, update_every=4):
+    def __init__(self, state_size: int, action_size: int, seed: int = 0,
+                 buffer_size: int = int(1e5), batch_size: int = 64, gamma: float = 0.99,
+                 lr: float = 1e-3, tau: float = 1e-3, update_every: int = 4) -> None:
 
         self.state_size = state_size
         self.action_size = action_size
@@ -19,14 +20,14 @@ class DQNAgent:
         self.optimizer = torch.optim.Adam(self.qnetwork_local.parameters(), lr=lr)
 
         # Replay buffer
-        self.memory = ReplayBuffer(buffer_size, batch_size, seed)
+        self.memory = ReplayBuffer(buffer_size, batch_size)
         self.batch_size = batch_size
         self.gamma = gamma
         self.tau = tau
         self.update_every = update_every
         self.t_step = 0
 
-    def step(self, state, action, reward, next_state, done):
+    def step(self, state: np.ndarray, action: int, reward: float, next_state: np.ndarray, done: bool) -> None:
         self.memory.add(state, action, reward, next_state, done)
 
         self.t_step = (self.t_step + 1) % self.update_every
@@ -34,19 +35,19 @@ class DQNAgent:
             experiences = self.memory.sample()
             self.learn(experiences)
 
-    def act(self, state, eps=0.0):
-        state = torch.from_numpy(state).float().unsqueeze(0)
+    def act(self, state: np.ndarray, eps: float = 0.0) -> int:
+        new_state = torch.from_numpy(state).float().unsqueeze(0)
         self.qnetwork_local.eval()
         with torch.no_grad():
-            action_values = self.qnetwork_local(state)
+            action_values = self.qnetwork_local(new_state)
         self.qnetwork_local.train()
 
         if np.random.rand() > eps:
-            return np.argmax(action_values.cpu().data.numpy())
+            return int(np.argmax(action_values.cpu().data.numpy()))
         else:
             return np.random.choice(np.arange(self.action_size))
 
-    def learn(self, experiences):
+    def learn(self, experiences: Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]) -> None:
         states, actions, rewards, next_states, dones = experiences
 
         states = torch.tensor(states, dtype=torch.float32)
@@ -76,6 +77,8 @@ class DQNAgent:
         # Soft update target network
         self.soft_update(self.qnetwork_local, self.qnetwork_target, self.tau)
 
-    def soft_update(self, local_model, target_model, tau):
+    def soft_update(self, local_model: QNetwork, target_model: QNetwork, tau: float) -> None:
+        """Soft update model parameters."""
+        """θ_target = τ*θ_local + (1 - τ)*θ_target"""
         for target_param, local_param in zip(target_model.parameters(), local_model.parameters()):
             target_param.data.copy_(tau * local_param.data + (1.0 - tau) * target_param.data)
