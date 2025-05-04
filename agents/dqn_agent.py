@@ -8,11 +8,15 @@ from utils.replay_buffer import ReplayBuffer
 class DQNAgent:
     def __init__(self, state_size: int, action_size: int, seed: int = 0,
                  buffer_size: int = int(1e5), batch_size: int = 64, gamma: float = 0.99,
-                 lr: float = 1e-3, tau: float = 1e-3, update_every: int = 4) -> None:
+                 lr: float = 1e-3, tau: float = 1e-3, update_every: int = 4, use_double_dqn:
+                 bool = True) -> None:
 
         self.state_size = state_size
         self.action_size = action_size
         self.seed = np.random.seed(seed)
+
+        # Double or Single DQN Flag
+        self.use_double_dqn = use_double_dqn
 
         # Q-Networks
         self.qnetwork_local = QNetwork(state_size, action_size, fc1_dims=64, fc2_dims=64).to("cpu")
@@ -58,7 +62,16 @@ class DQNAgent:
 
         # Get max predicted Q values (for next states) from target model
         with torch.no_grad():
-            q_targets_next = self.qnetwork_target(next_states).max(1)[0].unsqueeze(1)
+            # Branch for single or double DQN
+            if self.use_double_dqn:
+                #Double
+                next_actions = self.qnetwork_local(next_states).argmax(1).unsqueeze(1)
+                q_targets_next = self.qnetwork_local(next_states).gather(1, next_actions)
+            else:
+                #Vanilla
+                q_targets_next = self.qnetwork_target(next_states).max(1)[0].unsqueeze(1)
+        
+
 
         # Compute Q targets for current states
         q_targets = rewards + (self.gamma * q_targets_next * (1 - dones))
