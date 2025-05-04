@@ -47,7 +47,7 @@ if __name__ == "__main__":
     state_size = env.observation_space.shape[0] # type: ignore
     action_size = env.action_space.n # type: ignore
 
-    agent = DQNAgent(state_size, action_size)
+    agent = DQNAgent(state_size, action_size, use_double_dqn=True)
     scores = train(env, agent, render_last=True)
 
     env.close()
