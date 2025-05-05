@@ -1,6 +1,8 @@
 import gymnasium as gym
 import numpy as np
 import argparse
+import matplotlib.pyplot as plt
+import seaborn as sns
 from argparse import Namespace
 from agents.dqn_agent import DQNAgent
 from utils.train_logger import TrainLogger
@@ -42,7 +44,7 @@ def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 10
     logger.save_plots()
     logger.save_metrics()
     logger.save_summary()
-    return logger.scores
+    return logger.scores, logger.successes
 
 # Parses arguments
 def parse_args() -> Namespace:
@@ -64,16 +66,44 @@ def main() -> None:
         action_size: int = env.action_space.n # type: ignore
         agent: DQNAgent = DQNAgent(state_size, action_size, double_flag=double_flag)
         print(f"{'Double DQN' if double_flag else 'Single DQN'} is being used.")
-        scores: list[float] = train(env, agent, render_last=True, double_flag=double_flag)
+        scores, successes = train(env, agent, render_last=True, double_flag=double_flag)
         env.close()
+        return scores, successes
 
     if args.run_one:
         #Only runs the specified model
         run_training(double_flag=args.double)
     else:
-        run_training(double_flag=False) #Single DQN
-        run_training(double_flag=True) #Double DQN
-    
+        single_scores, single_successes = run_training(double_flag=False) #Single DQN
+        double_scores, double_successes = run_training(double_flag=True) #Double DQN
+
+        sns.set(style="darkgrid")
+        plt.figure()
+        plt.plot(single_scores, label="Single DQN", color='blue')
+        plt.plot(double_scores, label="Double DQN", color='red')
+        plt.xlabel("Episode")
+        plt.ylabel("Reward")
+        plt.title("Single vs Double DQN Reward Over Time")
+        plt.legend()
+        plt.savefig("results/reward_plot_combined.png")
+        plt.close()
+
+        # Compute moving average of success
+        logger_util = TrainLogger()  # Just for access to _moving_average
+        single_success_rate = logger_util._moving_average(single_successes, window=20)
+        double_success_rate = logger_util._moving_average(double_successes, window=20)
+
+        # Plot success rate
+        sns.set(style="darkgrid")
+        plt.figure()
+        plt.plot(single_success_rate, label="Single DQN", color='blue')
+        plt.plot(double_success_rate, label="Double DQN", color='red')
+        plt.xlabel("Episode")
+        plt.ylabel("Success Rate (Rolling Average)")
+        plt.title("Single vs Double DQN: Success Rate Over Time")
+        plt.legend()
+        plt.savefig("results/success_plot_combined.png")
+        plt.close()
 
 
 if __name__ == "__main__":
