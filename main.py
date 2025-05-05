@@ -1,5 +1,7 @@
 import gymnasium as gym
 import numpy as np
+import argparse
+from argparse import Namespace
 from agents.dqn_agent import DQNAgent
 from utils.train_logger import TrainLogger
 from typing import SupportsFloat, Tuple, Any
@@ -8,8 +10,8 @@ from tqdm import tqdm
 
 def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 1000,
           eps_start: float = 1.0, eps_end: float = 0.01, eps_decay: float = 0.995,
-          render_last: bool = False) -> list[float]:
-    logger = TrainLogger(printer=tqdm.write)
+          render_last: bool = False, double_flag: bool = False) -> list[float]:
+    logger = TrainLogger(printer=tqdm.write, double_flag=double_flag)
     eps = eps_start
 
     for i_episode in tqdm(range(1, n_episodes + 1)):
@@ -39,15 +41,40 @@ def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 10
 
     logger.save_plots()
     logger.save_metrics()
+    logger.save_summary()
     return logger.scores
+
+# Parses arguments
+def parse_args() -> Namespace:
+    parser = argparse.ArgumentParser(description="TCSS 435 Lunar Lander")
+    parser.add_argument("--run_one", action="store_true",
+                        help="Run only double or single DQN. Defaults to both.")
+    parser.add_argument("--double", action="store_true",
+                        help="Applies if --run_one is used. Use double DQN instead of single DQN. Defaults to single.")
+    return parser.parse_args()
+
+# Main method
+def main() -> None:
+    """Main program"""
+    args: Namespace = parse_args()
+
+    def run_training(double_flag: bool):
+        env: gym.Env = gym.make("LunarLander-v3")
+        state_size: int = env.observation_space.shape[0] # type: ignore
+        action_size: int = env.action_space.n # type: ignore
+        agent: DQNAgent = DQNAgent(state_size, action_size, double_flag=double_flag)
+        print(f"{'Double DQN' if double_flag else 'Single DQN'} is being used.")
+        scores: list[float] = train(env, agent, render_last=True, double_flag=double_flag)
+        env.close()
+
+    if args.run_one:
+        #Only runs the specified model
+        run_training(double_flag=args.double)
+    else:
+        run_training(double_flag=False) #Single DQN
+        run_training(double_flag=True) #Double DQN
+    
 
 
 if __name__ == "__main__":
-    env = gym.make("LunarLander-v3")
-    state_size = env.observation_space.shape[0] # type: ignore
-    action_size = env.action_space.n # type: ignore
-
-    agent = DQNAgent(state_size, action_size)
-    scores = train(env, agent, render_last=True)
-
-    env.close()
+    main()
