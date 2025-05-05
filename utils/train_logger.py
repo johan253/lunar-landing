@@ -1,4 +1,5 @@
 import os
+import statistics
 from typing import List, Callable
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -42,6 +43,33 @@ class TrainLogger:
         plt.title("LunarLander Success Rate")
         plt.legend()
         plt.savefig(os.path.join(self.save_dir, f"success_plot_{dqn_type}.png"))
+        plt.close()
+
+    def get_summary(self) -> dict[str, float]: 
+        """Calculates average reward and success rate from the last 100 episodes"""
+        last_100_scores = self.scores[-100:] if len(self.scores) >= 100 else self.scores
+        last_100_successes = self.successes[-100:] if len(self.successes) >= 100 else self.successes
+        summary = {
+            "Success Rate": sum(last_100_successes) / len(last_100_successes) if last_100_successes else 0.0,
+            "Mean Reward": sum(last_100_scores) / len(last_100_scores) if last_100_scores else 0.0,
+            "Median Reward": statistics.median(last_100_scores) if last_100_scores else 0.0,
+            "Mode Reward": statistics.mode(last_100_scores) if last_100_scores and len(set(last_100_scores)) > 1 else 0.0,
+            "Std. Dev. of Reward": statistics.stdev(last_100_scores) if len(last_100_scores) > 1 else 0.0,
+            "Highest Reward": max(last_100_scores) if last_100_scores else 0.0,
+            "Lowest Reward": min(last_100_scores) if last_100_scores else 0.0
+        }
+        return summary
+    
+    def save_summary(self) -> None:
+        """Plots and saves a summary table of the last 100 episodes"""
+        summary = self.get_summary()
+        table_data = [[key, f"{value:.2f}"] for key, value in summary.items()]
+        fig, ax = plt.subplots()
+        ax.axis("off")
+        table = ax.table(cellText=table_data, colLabels=["Metric", "Value"], loc="center", cellLoc="center")
+        table.scale(1, 2)
+        plt.title(f"{'Double' if self.double_flag else 'Single'} DQN Summary (Last 100 Episodes)")
+        plt.savefig(os.path.join(self.save_dir, f"summary_table_{'double' if self.double_flag else 'single'}.png"))
         plt.close()
 
     def _moving_average(self, data: List[int], window: int = 20) -> List[float]:
