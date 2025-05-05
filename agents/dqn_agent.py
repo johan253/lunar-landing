@@ -13,7 +13,7 @@ class DQNAgent:
     def __init__(self, state_size: int, action_size: int, seed: int = 0,
                  buffer_size: int = int(1e5), batch_size: int = 64, gamma: float = 0.99,
                  lr: float = 1e-3, tau: float = 1e-3, update_every: int = 4, double_flag:
-                 bool = False) -> None
+                 bool = False) -> None:
         '''
         Deep Q-Network (DQN) Agent.
         Interacts with and learns from the environment by storing experiences, 
