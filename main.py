@@ -12,9 +12,12 @@ from tqdm import tqdm
 
 def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 1000,
           eps_start: float = 1.0, eps_end: float = 0.01, eps_decay: float = 0.995,
-          render_last: bool = False, double_flag: bool = False) -> list[float]:
+          render_last: bool = False, double_flag: bool = False) -> Tuple[list[float], list[int], list[float]]:
     logger = TrainLogger(printer=tqdm.write, double_flag=double_flag)
     eps = eps_start
+
+    discounted_returns = []
+    gamma = 0.99
 
     for i_episode in tqdm(range(1, n_episodes + 1)):
         if render_last and i_episode == n_episodes:
@@ -23,6 +26,7 @@ def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 10
         
         state: np.ndarray = env.reset()[0]
         score = 0.0
+        rewards = []
 
         for t in range(max_t):
             action = agent.act(state, eps)
@@ -33,9 +37,15 @@ def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 10
             agent.step(state, action, float(reward), next_state, done)
             state = next_state
             score += float(reward)
+            rewards.append(float(reward))
 
             if done:
                 break
+
+        G = 0.0
+        for r in reversed(rewards):
+            G = r + gamma * G
+        discounted_returns.append(G)
 
         success = score >= 200  # Define success threshold
         logger.log(i_episode, score, success)
@@ -44,7 +54,7 @@ def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 10
     logger.save_plots()
     logger.save_metrics()
     logger.save_summary()
-    return logger.scores, logger.successes
+    return logger.scores, logger.successes, discounted_returns
 
 # Parses arguments
 def parse_args() -> Namespace:
@@ -66,17 +76,18 @@ def main() -> None:
         action_size: int = env.action_space.n # type: ignore
         agent: DQNAgent = DQNAgent(state_size, action_size, double_flag=double_flag)
         print(f"{'Double DQN' if double_flag else 'Single DQN'} is being used.")
-        scores, successes = train(env, agent, render_last=True, double_flag=double_flag)
+        scores, successes, returns = train(env, agent, render_last=True, double_flag=double_flag)
         env.close()
-        return scores, successes
+        return scores, successes, returns
 
     if args.run_one:
         #Only runs the specified model
         run_training(double_flag=args.double)
     else:
-        single_scores, single_successes = run_training(double_flag=False) #Single DQN
-        double_scores, double_successes = run_training(double_flag=True) #Double DQN
+        single_scores, single_successes, single_returns = run_training(double_flag=False) #Single DQN
+        double_scores, double_successes, double_returns = run_training(double_flag=True) #Double DQN
 
+        # Combined Reward plot
         sns.set(style="darkgrid")
         plt.figure()
         plt.plot(single_scores, label="Single DQN", color='blue')
@@ -89,11 +100,11 @@ def main() -> None:
         plt.close()
 
         # Compute moving average of success
-        logger_util = TrainLogger()  # Just for access to _moving_average
+        logger_util = TrainLogger()  
         single_success_rate = logger_util._moving_average(single_successes, window=20)
         double_success_rate = logger_util._moving_average(double_successes, window=20)
 
-        # Plot success rate
+        # Combined success plot
         sns.set(style="darkgrid")
         plt.figure()
         plt.plot(single_success_rate, label="Single DQN", color='blue')
@@ -103,6 +114,18 @@ def main() -> None:
         plt.title("Single vs Double DQN: Success Rate Over Time")
         plt.legend()
         plt.savefig("results/success_plot_combined.png")
+        plt.close()
+
+        # Combined Return plot
+        sns.set(style="darkgrid")
+        plt.figure()
+        plt.plot(single_returns, label="Single DQN", color='blue')
+        plt.plot(double_returns, label="Double DQN", color='red')
+        plt.xlabel("Episode")
+        plt.ylabel("Episodic Return (Discounted)")
+        plt.title("Single vs Double DQN: Discounted Episodic Return Over Time")
+        plt.legend()
+        plt.savefig("results/return_discounted_plot_combined.png")
         plt.close()
 
 
