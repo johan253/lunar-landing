@@ -1,18 +1,28 @@
-import gymnasium as gym
-import numpy as np
 import argparse
-import matplotlib.pyplot as plt
-import seaborn as sns
 from argparse import Namespace
-from agents.dqn_agent import DQNAgent
-from utils.train_logger import TrainLogger
-from typing import SupportsFloat, Tuple, Any
+from typing import Any, SupportsFloat, Tuple
+
+import gymnasium as gym
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
 from tqdm import tqdm
 
+from agents.dqn_agent import DQNAgent
+from utils.train_logger import TrainLogger
 
-def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 1000,
-          eps_start: float = 1.0, eps_end: float = 0.01, eps_decay: float = 0.995,
-          render_last: bool = False, double_flag: bool = False) -> Tuple[list[float], list[int], list[float]]:
+
+def train(
+    env: gym.Env,
+    agent: DQNAgent,
+    n_episodes: int = 1000,
+    max_t: int = 1000,
+    eps_start: float = 1.0,
+    eps_end: float = 0.01,
+    eps_decay: float = 0.995,
+    render_last: bool = False,
+    double_flag: bool = False,
+) -> Tuple[list[float], list[int], list[float]]:
     logger = TrainLogger(printer=tqdm.write, double_flag=double_flag)
     eps = eps_start
 
@@ -23,7 +33,7 @@ def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 10
         if render_last and i_episode == n_episodes:
             env.close()
             env = gym.make("LunarLander-v3", render_mode="human")
-        
+
         state: np.ndarray = env.reset()[0]
         score = 0.0
         rewards = []
@@ -56,14 +66,22 @@ def train(env: gym.Env, agent: DQNAgent, n_episodes: int = 1000, max_t: int = 10
     logger.save_summary()
     return logger.scores, logger.successes, discounted_returns
 
+
 # Parses arguments
 def parse_args() -> Namespace:
     parser = argparse.ArgumentParser(description="TCSS 435 Lunar Lander")
-    parser.add_argument("--run_one", action="store_true",
-                        help="Run only double or single DQN. Defaults to both.")
-    parser.add_argument("--double", action="store_true",
-                        help="Applies if --run_one is used. Use double DQN instead of single DQN. Defaults to single.")
+    parser.add_argument(
+        "--run_one",
+        action="store_true",
+        help="Run only double or single DQN. Defaults to both.",
+    )
+    parser.add_argument(
+        "--double",
+        action="store_true",
+        help="Applies if --run_one is used. Use double DQN instead of single DQN. Defaults to single.",
+    )
     return parser.parse_args()
+
 
 # Main method
 def main() -> None:
@@ -72,26 +90,32 @@ def main() -> None:
 
     def run_training(double_flag: bool):
         env: gym.Env = gym.make("LunarLander-v3")
-        state_size: int = env.observation_space.shape[0] # type: ignore
-        action_size: int = env.action_space.n # type: ignore
+        state_size: int = env.observation_space.shape[0]  # type: ignore
+        action_size: int = env.action_space.n  # type: ignore
         agent: DQNAgent = DQNAgent(state_size, action_size, double_flag=double_flag)
         print(f"{'Double DQN' if double_flag else 'Single DQN'} is being used.")
-        scores, successes, returns = train(env, agent, render_last=True, double_flag=double_flag)
+        scores, successes, returns = train(
+            env, agent, render_last=True, double_flag=double_flag
+        )
         env.close()
         return scores, successes, returns
 
     if args.run_one:
-        #Only runs the specified model
+        # Only runs the specified model
         run_training(double_flag=args.double)
     else:
-        single_scores, single_successes, single_returns = run_training(double_flag=False) #Single DQN
-        double_scores, double_successes, double_returns = run_training(double_flag=True) #Double DQN
+        single_scores, single_successes, single_returns = run_training(
+            double_flag=False
+        )  # Single DQN
+        double_scores, double_successes, double_returns = run_training(
+            double_flag=True
+        )  # Double DQN
 
         # Combined Reward plot
         sns.set(style="darkgrid")
         plt.figure()
-        plt.plot(single_scores, label="Single DQN", color='blue')
-        plt.plot(double_scores, label="Double DQN", color='red')
+        plt.plot(single_scores, label="Single DQN", color="blue")
+        plt.plot(double_scores, label="Double DQN", color="red")
         plt.xlabel("Episode")
         plt.ylabel("Reward")
         plt.title("Single vs Double DQN Reward Over Time")
@@ -100,15 +124,15 @@ def main() -> None:
         plt.close()
 
         # Compute moving average of success
-        logger_util = TrainLogger()  
+        logger_util = TrainLogger()
         single_success_rate = logger_util._moving_average(single_successes, window=20)
         double_success_rate = logger_util._moving_average(double_successes, window=20)
 
         # Combined success plot
         sns.set(style="darkgrid")
         plt.figure()
-        plt.plot(single_success_rate, label="Single DQN", color='blue')
-        plt.plot(double_success_rate, label="Double DQN", color='red')
+        plt.plot(single_success_rate, label="Single DQN", color="blue")
+        plt.plot(double_success_rate, label="Double DQN", color="red")
         plt.xlabel("Episode")
         plt.ylabel("Success Rate (Rolling Average)")
         plt.title("Single vs Double DQN: Success Rate Over Time")
@@ -119,8 +143,8 @@ def main() -> None:
         # Combined Return plot
         sns.set(style="darkgrid")
         plt.figure()
-        plt.plot(single_returns, label="Single DQN", color='blue')
-        plt.plot(double_returns, label="Double DQN", color='red')
+        plt.plot(single_returns, label="Single DQN", color="blue")
+        plt.plot(double_returns, label="Double DQN", color="red")
         plt.xlabel("Episode")
         plt.ylabel("Episodic Return (Discounted)")
         plt.title("Single vs Double DQN: Discounted Episodic Return Over Time")
