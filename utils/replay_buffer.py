@@ -4,7 +4,7 @@ Date: 05/07/2025
 """
 
 import random
-from collections import deque, namedtuple
+from collections import deque
 from typing import Deque, NamedTuple, Tuple
 
 import numpy as np

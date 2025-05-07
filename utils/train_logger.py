@@ -145,7 +145,7 @@ class TrainLogger:
         """Plots and saves a summary table of the last 100 episodes"""
         summary = self.get_summary()
         table_data = [[key, f"{value:.2f}"] for key, value in summary.items()]
-        fig, ax = plt.subplots()
+        _, ax = plt.subplots()
         ax.axis("off")
         table = ax.table(
             cellText=table_data,
