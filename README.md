@@ -2,11 +2,11 @@
 
 Made for TCSS 435 by:
 
-- (Charankamal Brar)[https://github.com/csbrar25]
-- (Johan Hernandez)[https://github.com/johan253]
-- (Brittney Jones)[https://github.com/jonesb7]
-- (Lucas Perry)[https://github.com/lperry2]
-- (Corey Young)[https://github.com/cyoung5233]
+- [Charankamal Brar](https://github.com/csbrar25)
+- [Johan Hernandez](https://github.com/johan253)
+- [Brittney Jones](https://github.com/jonesb7)
+- [Lucas Perry](https://github.com/lperry2)
+- [Corey Young](https://github.com/cyoung5233)
 
 ## Setup
 
