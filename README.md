@@ -8,6 +8,8 @@ Made for TCSS 435 by:
 - [Lucas Perry](https://github.com/lperry2)
 - [Corey Young](https://github.com/cyoung5233)
 
+Our groups report can be found [here](report.pdf)
+
 ## Setup
 
 In order to run this project, you need to have python `^3.11` installed. The `pip` requirements can be found in `requirements.txt` and can be installed by running:
